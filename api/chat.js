@@ -27,7 +27,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: data.error.message });
     }
 
-    return res.status(200).json({ text: data.content?.[0]?.text || '' });
+ const text = (data.content?.[0]?.text || '').replace(/\*\*/g, '');
+return res.status(200).json({ text });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
