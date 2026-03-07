@@ -1,40 +1,1308 @@
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mind Canvas — 감정의 예술</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Serif+KR:wght@300;400;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0f;
+    --paper: #f5f0e8;
+    --mist: #1a1a22;
+    --gold: #c9a84c;
+    --ember: #d4623a;
+    --jade: #4a8c7a;
+    --violet: #6b5b8a;
+    --ash: #9b9aa3;
+    --cream: #ede8dd;
+    --glow: rgba(201,168,76,0.15);
   }
 
-  const { prompt } = req.body;
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'Noto Serif KR', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Animated background canvas */
+  #bgCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    padding: 48px 0 32px;
+    text-align: center;
+    animation: fadeDown 1s ease both;
+  }
+
+  .logo-mark {
+    width: 48px; height: 48px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--ember), var(--gold), var(--jade), var(--violet), var(--ember));
+    animation: spinSlow 12s linear infinite;
+    position: relative;
+  }
+
+  .logo-mark::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+
+  @keyframes spinSlow {
+    to { transform: rotate(360deg); }
+  }
+
+  .site-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 5vw, 42px);
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--gold), var(--cream), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .site-sub {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ash);
+    letter-spacing: 0.2em;
+    margin-top: 6px;
+  }
+
+  /* Stage system */
+  .stage { display: none; animation: fadeUp 0.6s ease both; }
+  .stage.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Card */
+  .card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(12px);
+  }
+
+  .card-gold {
+    border-color: rgba(201,168,76,0.3);
+    background: rgba(201,168,76,0.04);
+  }
+
+  /* Emotion starter */
+  .emotion-prompt {
+    font-family: 'Gowun Batang', serif;
+    font-size: 18px;
+    line-height: 1.8;
+    color: var(--cream);
+    margin-bottom: 28px;
+  }
+
+  .emotion-input-wrap {
+    position: relative;
+  }
+
+  textarea.emotion-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    color: var(--cream);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 16px;
+    line-height: 1.7;
+    padding: 20px 24px;
+    resize: none;
+    min-height: 120px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    outline: none;
+  }
+
+  textarea.emotion-input::placeholder {
+    color: var(--ash);
+    opacity: 0.6;
+  }
+
+  textarea.emotion-input:focus {
+    border-color: rgba(201,168,76,0.5);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold), #e8c56a);
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.3);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--ash);
+  }
+
+  .btn-ghost:hover {
+    border-color: rgba(255,255,255,0.4);
+    color: var(--cream);
+  }
+
+  /* Chat area */
+  .chat-area {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .msg-ai { align-items: flex-start; }
+  .msg-user { align-items: flex-start; flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .msg-avatar.ai {
+    background: conic-gradient(from 0deg, var(--ember), var(--gold), var(--jade));
+    animation: spinSlow 12s linear infinite;
+    position: relative;
+  }
+
+  .msg-avatar.ai::after {
+    content: '✦';
+    position: absolute;
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  .msg-avatar.user {
+    background: rgba(255,255,255,0.08);
+    color: var(--ash);
+    font-size: 18px;
+  }
+
+  .msg-bubble {
+    max-width: 78%;
+    padding: 14px 18px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .msg-ai .msg-bubble {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-top-left-radius: 4px;
+    color: var(--cream);
+    font-family: 'Gowun Batang', serif;
+  }
+
+  .msg-user .msg-bubble {
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-top-right-radius: 4px;
+    color: var(--cream);
+    text-align: right;
+  }
+
+  /* Chat input */
+  .chat-input-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    color: var(--cream);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 14px 18px;
+    resize: none;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .chat-input:focus {
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  .chat-send-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), #e8c56a);
+    border: none;
+    color: var(--ink);
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .chat-send-btn:hover { transform: scale(1.08); box-shadow: 0 4px 16px rgba(201,168,76,0.3); }
+  .chat-send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  /* Turn counter */
+  .turn-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--ash);
+    letter-spacing: 0.08em;
+  }
+
+  .turn-dots {
+    display: flex;
+    gap: 5px;
+  }
+
+  .turn-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: background 0.4s;
+  }
+
+  .turn-dot.done { background: var(--gold); }
+  .turn-dot.active { background: var(--ember); animation: pulse 1.2s ease infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.3); }
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-family: 'DM Serif Display', serif;
+  }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 18px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 14px;
+    width: fit-content;
+    border-top-left-radius: 4px;
+  }
+
+  .loading-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ash);
+    animation: bounce 1.2s ease infinite;
+  }
+
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Image reveal */
+  .artwork-frame {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .artwork-frame img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    animation: revealImage 1.2s ease both;
+  }
+
+  @keyframes revealImage {
+    from { opacity: 0; filter: blur(20px) saturate(0.2); transform: scale(1.04); }
+    to { opacity: 1; filter: blur(0) saturate(1); transform: scale(1); }
+  }
+
+  .artwork-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 20px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.06em;
+  }
+
+  /* Emotion tags */
+  .emotion-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .emotion-tag {
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-family: 'Gowun Batang', serif;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+  }
+
+  /* Coaching questions */
+  .coaching-question {
+    display: flex;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .coaching-question:last-child { border-bottom: none; }
+
+  .q-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: rgba(201,168,76,0.35);
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  .q-text {
+    font-family: 'Gowun Batang', serif;
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--cream);
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 1px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--ember), var(--gold));
+    border-radius: 1px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Safety notice */
+  .safety-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(74,140,122,0.1);
+    border: 1px solid rgba(74,140,122,0.2);
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--jade);
+    margin-bottom: 20px;
+    font-family: 'Gowun Batang', serif;
+  }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+  }
+
+  .divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+  .divider-mark { color: var(--gold); font-size: 12px; letter-spacing: 0.15em; font-family: 'DM Serif Display'; }
+
+  /* JSON emotion data */
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .data-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .data-label { font-size: 10px; letter-spacing: 0.15em; color: var(--ash); margin-bottom: 4px; }
+  .data-value { font-size: 14px; color: var(--cream); font-family: 'Gowun Batang', serif; }
+
+  /* Color swatches */
+  .color-swatches { display: flex; gap: 6px; margin-top: 6px; }
+  .color-swatch {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* Restart */
+  .restart-row {
+    text-align: center;
+    padding-top: 16px;
+  }
+
+  /* Safety alert */
+  .safety-alert {
+    background: rgba(212,98,58,0.1);
+    border: 1px solid rgba(212,98,58,0.3);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .artist-choice-bubble {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 16px;
+    padding: 20px;
+    max-width: 360px;
+  }
+  .choice-btn {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--cream);
+    font-family: 'Gowun Batang', serif;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.5;
+  }
+  .choice-btn:hover {
+    background: rgba(201,168,76,0.15);
+    border-color: rgba(201,168,76,0.6);
+  }
+  .safety-alert h3 {
+    font-family: 'Gowun Batang', serif;
+    color: var(--ember);
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .safety-alert p {
+    font-family: 'Gowun Batang', serif;
+    color: var(--cream);
+    line-height: 1.8;
+    font-size: 15px;
+  }
+
+  /* Intensity bar */
+  .intensity-bar {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .intensity-pip {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    transition: background 0.4s;
+  }
+
+  .intensity-pip.lit { background: var(--gold); }
+
+  /* Responsive */
+  @media (max-width: 520px) {
+    .card { padding: 20px; }
+    .data-grid { grid-template-columns: 1fr; }
+    .msg-bubble { max-width: 88%; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="app">
+  <header class="header">
+    <div class="logo-mark"></div>
+    <h1 class="site-title">Mind Canvas</h1>
+    <p class="site-sub">감정의 예술 · 나를 그리다</p>
+  </header>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:8%"></div>
+  </div>
+
+  <!-- Stage 0: 감정 입력 -->
+  <div class="stage active" id="stage0">
+    <div class="card card-gold">
+      <p class="section-label">첫 번째 감정</p>
+      <p class="emotion-prompt">
+        지금 이 순간, 마음속에 어떤 감정이 자리하고 있나요?<br>
+        떠오르는 대로 자유롭게 적어주세요.
+      </p>
+      <div class="safety-badge">
+        ✦ &nbsp; 이 공간은 안전합니다 — 당신의 감정을 판단하지 않아요
+      </div>
+      <div class="emotion-input-wrap">
+        <textarea class="emotion-input" id="initialEmotionInput"
+          placeholder="예) 오늘은 왠지 모르게 마음이 무겁고 쓸쓸해요..."
+          rows="4"></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+        <button class="btn btn-primary" id="startBtn" onclick="startSession()">
+          캔버스 열기 &nbsp; ✦
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 1: 대화 -->
+  <div class="stage" id="stage1">
+    <div class="card">
+      <div class="turn-counter">
+        <span>대화 진행</span>
+        <div class="turn-dots" id="turnDots">
+          <div class="turn-dot active"></div>
+          <div class="turn-dot"></div>
+          <div class="turn-dot"></div>
+          <div class="turn-dot"></div>
+          <div class="turn-dot"></div>
+        </div>
+        <span id="turnLabel">1 / 5+ 턴</span>
+      </div>
+      <div class="chat-area" id="chatArea"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" rows="1"
+          placeholder="마음속 이야기를 들려주세요..."
+          onkeydown="handleChatKey(event)"></textarea>
+        <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 2: 이미지 생성 중 -->
+  <div class="stage" id="stage2">
+    <div class="card" style="text-align:center; padding: 48px 32px;">
+      <div class="logo-mark" style="margin:0 auto 24px;"></div>
+      <p class="section-label" style="text-align:center;">감정을 그림으로 변환하는 중</p>
+      <p style="font-family:'Gowun Batang',serif; color:var(--ash); font-size:15px; line-height:1.9; margin-top:12px;">
+        당신의 감정을 분석하여<br>
+        마스터 화가의 스타일로 캔버스를 물들이고 있어요<br>
+        <span style="font-size:12px; opacity:0.5;">(최대 30초 소요될 수 있어요)</span>
+      </p>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:28px;">
+        <div class="loading-dot" style="width:10px;height:10px;"></div>
+        <div class="loading-dot" style="width:10px;height:10px;"></div>
+        <div class="loading-dot" style="width:10px;height:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 3: 결과 -->
+  <div class="stage" id="stage3">
+    <!-- 이미지 -->
+    <div class="card" style="padding:16px;">
+      <p class="section-label">당신의 감정 작품</p>
+      <div class="artwork-frame">
+        <img id="artworkImg" src="" alt="감정 추상 이미지" referrerpolicy="no-referrer">
+        <div class="artwork-overlay" id="artworkStyle"></div>
+      </div>
+    </div>
+
+    <!-- 감정 데이터 -->
+    <div class="card">
+      <p class="section-label">감정 분석</p>
+      <div class="emotion-tags" id="emotionTags"></div>
+      <div class="data-grid" id="dataGrid"></div>
+    </div>
+
+    <!-- 아트 코칭 -->
+    <div class="card card-gold">
+      <p class="section-label">아트 코칭 — 자기 성찰 질문</p>
+      <p style="font-family:'Gowun Batang',serif; font-size:14px; color:var(--ash); margin-bottom:20px; line-height:1.7;">
+        이 그림을 바라보며 천천히 생각해보세요
+      </p>
+      <div id="coachingQuestions"></div>
+    </div>
+
+    <!-- 프롬프트 정보 -->
+    <div class="card" id="promptCard" style="display:none;">
+      <p class="section-label">이미지 프롬프트</p>
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:14px; font-family:monospace; font-size:12px; color:var(--ash); word-break:break-all; line-height:1.7;" id="promptDisplay"></div>
+    </div>
+
+    <div class="restart-row">
+      <button class="btn btn-ghost" onclick="restart()">↺ &nbsp; 새 세션 시작</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Background Canvas Animation =====
+const bgCanvas = document.getElementById('bgCanvas');
+const ctx = bgCanvas.getContext('2d');
+let W, H, blobs = [];
+
+function initCanvas() {
+  W = bgCanvas.width = window.innerWidth;
+  H = bgCanvas.height = window.innerHeight;
+  blobs = Array.from({length: 5}, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: 200 + Math.random() * 300,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    color: ['#c9a84c','#d4623a','#4a8c7a','#6b5b8a','#3a6ad4'][Math.floor(Math.random()*5)]
+  }));
+}
+
+function animateBg() {
+  ctx.clearRect(0, 0, W, H);
+  blobs.forEach(b => {
+    b.x += b.vx; b.y += b.vy;
+    if (b.x < -b.r) b.x = W + b.r;
+    if (b.x > W + b.r) b.x = -b.r;
+    if (b.y < -b.r) b.y = H + b.r;
+    if (b.y > H + b.r) b.y = -b.r;
+    const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+    g.addColorStop(0, b.color + '20');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  requestAnimationFrame(animateBg);
+}
+
+initCanvas();
+animateBg();
+window.addEventListener('resize', initCanvas);
+
+// ===== API Key =====
+// API 키는 서버에서 관리됩니다
+
+// ===== App State =====
+let state = {
+  initialEmotion: '',
+  messages: [],      // {role, content}
+  turnCount: 0,
+  emotionData: null,
+  imageUrl: '',
+  coachingText: '',
+  conversationDone: false,
+  waitingForArtist: false
+};
+
+const SYSTEM_PROMPT = `당신은 마인드 캔버스(Mind Canvas) 앱에서 활동하는 문화예술교육용 AI 에이전트입니다.
+주요 대상은 아동·청소년 및 학생이며, 목표는 사용자의 감정을 예술적으로 표현하고 심층적인 자기 성찰을 돕는 것입니다.
+당신은 심리치료사/의사가 아니라, 따뜻하고 존중하며 판단하지 않는 말투를 사용하는 예술교육자이자 감정 코치입니다.
+
+규칙:
+- 질문은 짧고 명확하게, 한 번에 하나씩만 묻습니다.
+- 항상 공감 + 요약을 먼저, 그 다음 더 깊이 들어가는 질문 하나.
+- 심리 안전성 최우선: 사용자가 자해, 자살, 타인에 대한 폭력을 직접 언급할 때만 응답 맨 앞에 [SAFETY_ALERT]를 출력하세요. 일반적인 부정적 감정(슬픔, 외로움, 우울함, 힘듦 등)에는 절대 [SAFETY_ALERT]를 출력하지 마세요.
+- 모든 대화는 한국어로.
+
+세션 흐름:
+1. 처음엔 긍정/부정 감정 방향 확인
+2. 대표 감정 5-6개 제시 (선택)
+3. 세부 핵심 감정 단어로 좁히기
+4. 최소 5턴 이상 대화하며 시각화 질문 3가지 반드시 포함:
+   - "지금 이 감정을 표현한다면 어떤 색이 먼저 떠오르나요? 그 색에서 어떤 에너지가 느껴지나요?"
+   - "이 감정은 부드럽고 둥근 형태인가요, 아니면 날카롭고 부서지는 형태인가요? 질감은 어떨까요?"
+   - "이 감정이 존재하는 공간을 그림으로 그린다면 어떤 환경일까요?"
+5. 5턴 이상 + 시각화 질문 3개 완료 후 → JSON 출력
+
+JSON 출력 형식 (대화 완료 시):
+\`\`\`json
+{
+  "type": "image_prompt",
+  "prompt_en": "<마스터화가 스타일 + 추상 이미지 프롬프트 20단어 이상> ::style Midjourney --ar 1:1 --chaos 50 --v 6.0",
+  "prompt_ko": "<사용자 친화적 한국어 설명>",
+  "emotion_words_ko": ["감정1", "감정2"],
+  "intensity_1_to_5": 3,
+  "colors": ["색1", "색2"],
+  "shapes": ["형태1", "형태2"],
+  "textures": ["질감1", "질감2"],
+  "space_scene": "공간 묘사",
+  "art_style": "Style of [화가이름], highly abstract, fine art, no cartoon elements"
+}
+\`\`\`
+JSON 블록 뒤에는 한국어로 다음 문장 추가: "이미지 생성을 시작할게요."`;
+
+// ===== Utilities =====
+function setStage(n) {
+  document.querySelectorAll('.stage').forEach((s, i) => {
+    s.classList.toggle('active', i === n);
+  });
+  const progress = [8, 40, 70, 100];
+  document.getElementById('progressFill').style.width = (progress[n] ?? 8) + '%';
+}
+
+function addMessage(role, content) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = `msg msg-${role}`;
+  div.innerHTML = `
+    <div class="msg-avatar ${role}">${role === 'user' ? '☺' : ''}</div>
+    <div class="msg-bubble">${content.replace(/\n/g, '<br>')}</div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addLoading() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  div.id = 'loadingMsg';
+  div.innerHTML = `
+    <div class="msg-avatar ai"></div>
+    <div class="loading">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeLoading() {
+  const el = document.getElementById('loadingMsg');
+  if (el) el.remove();
+}
+
+function updateTurnDots() {
+  const dots = document.querySelectorAll('.turn-dot');
+  const t = Math.min(state.turnCount, 5);
+  dots.forEach((d, i) => {
+    d.classList.remove('done', 'active');
+    if (i < t - 1) d.classList.add('done');
+    else if (i === t - 1) d.classList.add('active');
+  });
+  document.getElementById('turnLabel').textContent = `${t} / 5+ 턴`;
+}
+
+function extractJSON(text) {
+  const match = text.match(/```json\s*([\s\S]*?)```/);
+  if (match) {
+    try { return JSON.parse(match[1]); } catch(e) { return null; }
+  }
+  return null;
+}
+
+// ===== API Call =====
+async function callClaude(messages) {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, system: SYSTEM_PROMPT })
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error);
+  return data.text || '';
+}
+
+// ===== Session Start =====
+async function startSession() {
+  const input = document.getElementById('initialEmotionInput').value.trim();
+  if (!input) { document.getElementById('initialEmotionInput').focus(); return; }
+
+  state.initialEmotion = input;
+  setStage(1);
+
+  // 첫 AI 메시지
+  addLoading();
+  document.getElementById('sendBtn').disabled = true;
+
+  const firstMsg = { role: 'user', content: `제 감정: ${input}` };
+  state.messages.push(firstMsg);
 
   try {
-    const GEMINI_KEY = process.env.GEMINI_API_KEY;
-    const MODEL_ID = 'gemini-3.1-flash-image-preview';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${GEMINI_KEY}`;
+    const reply = await callClaude(state.messages);
+    removeLoading();
+    state.messages.push({ role: 'assistant', content: reply });
+    addMessage('ai', reply);
+    state.turnCount = 1;
+    updateTurnDots();
+  } catch(e) {
+    removeLoading();
+    addMessage('ai', '죄송해요, 잠시 연결에 문제가 생겼어요. 다시 시도해주세요.');
+  }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: `Generate a professional abstract art in the style of a master painter. No text, no people: ${prompt}` }]
-        }],
-        generationConfig: {
-          responseModalities: ['IMAGE']
-        }
-      }),
-    });
+  document.getElementById('sendBtn').disabled = false;
+}
 
-    const result = await response.json();
+// ===== Send Message =====
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
 
-    if (result.candidates?.[0]?.content?.parts) {
-      const imagePart = result.candidates[0].content.parts.find(p => p.inlineData);
-      if (imagePart) {
-        const imageUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
-        return res.status(200).json({ imageUrl });
-      }
+  // 화가 이름 입력 대기 중이면 (conversationDone 체크 전에 처리)
+  if (state.waitingForArtist) {
+    state.waitingForArtist = false;
+    addMessage('user', text);
+    document.getElementById('chatInput').value = '';
+    document.getElementById('chatInput').disabled = false;
+    addMessage('ai', `${text}의 스타일로 그림을 그려볼게요 🎨`);
+    setTimeout(() => generateImage(text), 800);
+    return;
+  }
+
+  if (state.conversationDone) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMessage('user', text);
+  state.messages.push({ role: 'user', content: text });
+  state.turnCount++;
+  updateTurnDots();
+
+  document.getElementById('sendBtn').disabled = true;
+  addLoading();
+
+  try {
+    const reply = await callClaude(state.messages);
+    removeLoading();
+    state.messages.push({ role: 'assistant', content: reply });
+
+    // Check safety alert
+    if (reply.includes('[SAFETY_ALERT]') || reply.includes('자해하고') || reply.includes('죽고 싶') || reply.includes('죽어버리')) {
+      showSafetyAlert();
+      // return 없음 — 안전 메시지 후에도 대화 계속 진행
     }
 
-    return res.status(500).json({ error: result.error?.message || '이미지 데이터가 없습니다.' });
-  } catch (e) {
-    return res.status(500).json({ error: e.message });
+    // Check if JSON is ready
+    const jsonData = extractJSON(reply);
+    if (jsonData && jsonData.type === 'image_prompt') {
+      state.emotionData = jsonData;
+      state.conversationDone = true;
+
+      // Show last AI message (without JSON block)
+      const cleanReply = reply.replace(/```json[\s\S]*?```/, '').trim();
+      if (cleanReply) addMessage('ai', cleanReply);
+
+      // 화가 선택 UI 표시
+      setTimeout(() => showArtistChoice(), 800);
+    } else {
+      addMessage('ai', reply);
+    }
+  } catch(e) {
+    removeLoading();
+    addMessage('ai', '잠시 오류가 생겼어요. 다시 말씀해 주세요.');
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+  // Auto-resize
+  const t = e.target;
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+}
+
+// ===== Image Generation =====
+// Gemini 키는 서버에서 관리됩니다
+
+function showArtistChoice() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.id = 'artistChoiceBox';
+  div.className = 'msg msg-ai';
+  div.innerHTML = `
+    <div class="msg-avatar ai"></div>
+    <div class="artist-choice-bubble">
+      <p style="margin:0 0 14px 0; font-size:15px; line-height:1.8;">
+        이제 당신의 감정을 그림으로 담아볼게요.<br>어떤 방식으로 그려드릴까요?
+      </p>
+      <button class="choice-btn" onclick="selectArtist('custom')">
+        🎨 &nbsp;좋아하는 화가가 있어요
+        <span style="display:block; font-size:12px; opacity:0.7; margin-top:4px;">그 화가의 스타일로 그려드릴게요</span>
+      </button>
+      <button class="choice-btn" onclick="selectArtist('recommend')" style="margin-top:10px;">
+        ✨ &nbsp;마인드캔버스 추천 그림을 볼게요
+        <span style="display:block; font-size:12px; opacity:0.7; margin-top:4px;">감정에 어울리는 화가를 찾아드릴게요</span>
+      </button>
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  // 입력창 비활성화
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('chatInput').disabled = true;
+}
+
+function selectArtist(choice) {
+  // 선택 UI 제거
+  const box = document.getElementById('artistChoiceBox');
+  if (box) box.remove();
+
+  if (choice === 'custom') {
+    // 화가 이름 입력 요청
+    const area = document.getElementById('chatArea');
+    const div = document.createElement('div');
+    div.className = 'msg msg-ai';
+    div.innerHTML = `
+      <div class="msg-avatar ai"></div>
+      <div class="msg-bubble">좋아하는 화가의 이름을 알려주세요 🎨</div>
+    `;
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+    // 입력창 다시 활성화 (화가 이름 입력용)
+    document.getElementById('chatInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    state.waitingForArtist = true;
+  } else {
+    // 추천 그림 바로 생성
+    document.getElementById('chatInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    generateImage(null);
   }
 }
+
+async function generateImage(artistName) {
+  setStage(2);
+  const data = state.emotionData;
+  await generateCoaching();
+  try {
+    const basePrompt = (data.prompt_en || '').split('::')[0].trim();
+    const finalPrompt = artistName
+      ? `Style of ${artistName}, highly abstract fine art painting. No text, no people. ${basePrompt}`
+      : basePrompt;
+
+    const response = await fetch('/api/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: finalPrompt })
+    });
+    const result = await response.json();
+    if (result.imageUrl) {
+      showResults(result.imageUrl);
+      return;
+    }
+    throw new Error(result.error || "이미지 생성에 실패했습니다.");
+  } catch(e) {
+    console.error('이미지 생성 실패:', e);
+    showResults(null);
+  }
+}
+
+// ===== Coaching =====
+async function generateCoaching() {
+  const data = state.emotionData;
+  const prompt = `당신은 공감 능력이 뛰어난 아트 코치입니다. 아동·청소년을 위한 심리적으로 안전한 자기 성찰 질문 3-5개를 한국어로 생성해주세요.
+
+감정 데이터:
+- 핵심 감정: ${data.emotion_words_ko?.join(', ')}
+- 강도: ${data.intensity_1_to_5}/5
+- 색채: ${data.colors?.join(', ')}
+- 형태: ${data.shapes?.join(', ')}
+- 공간: ${data.space_scene}
+- 화가 스타일: ${data.art_style}
+
+질문 순서: 느낌 → 의미 → 변화/바람
+
+각 질문 앞에 번호를 붙여주세요 (1. 2. 3. ...) 그리고 판단 없이 따뜻하게.`;
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    });
+    const d = await response.json();
+    state.coachingText = d.text || '';
+  } catch(e) {
+    state.coachingText = '1. 이 그림에서 가장 먼저 눈에 들어오는 부분은 어디인가요?\n2. 그 부분을 보면서 어떤 감정이 올라오나요?\n3. 오늘 이 감정을 통해 자신에 대해 무엇을 알게 되었나요?';
+  }
+}
+
+// ===== Show Results =====
+function showResults(imageUrl) {
+  setStage(3);
+  const data = state.emotionData;
+
+  // Image
+  const img = document.getElementById('artworkImg');
+  const frame = document.querySelector('.artwork-frame');
+
+  // 로딩 중 표시
+  img.style.opacity = '0';
+  frame.style.background = 'rgba(255,255,255,0.03)';
+
+  const loadImage = (url) => {
+    img.onload = () => {
+      img.style.transition = 'opacity 1s ease';
+      img.style.opacity = '1';
+    };
+    img.onerror = () => {
+      img.src = buildCanvasPlaceholder(data);
+      img.style.opacity = '1';
+    };
+    img.src = url;
+  };
+
+  if (imageUrl) {
+    loadImage(imageUrl);
+  } else {
+    img.src = buildCanvasPlaceholder(data);
+    img.style.opacity = '1';
+  }
+
+  // Artist style overlay
+  // 그림 위 스타일 텍스트 숨김
+
+  // Emotion tags
+  const tagsEl = document.getElementById('emotionTags');
+  tagsEl.innerHTML = (data.emotion_words_ko || []).map(e =>
+    `<span class="emotion-tag">${e}</span>`
+  ).join('');
+
+  // Data grid
+  const grid = document.getElementById('dataGrid');
+  const intensity = data.intensity_1_to_5 || 3;
+  const pips = Array.from({length: 5}, (_, i) =>
+    `<div class="intensity-pip ${i < intensity ? 'lit' : ''}"></div>`
+  ).join('');
+
+  grid.innerHTML = `
+    <div class="data-item">
+      <div class="data-label">감정 강도</div>
+      <div class="intensity-bar">${pips}</div>
+      <div class="data-value" style="margin-top:6px;">${intensity} / 5</div>
+    </div>
+    <div class="data-item">
+      <div class="data-label">공간 / 배경</div>
+      <div class="data-value">${data.space_scene || '-'}</div>
+    </div>
+    <div class="data-item">
+      <div class="data-label">색채</div>
+      <div class="data-value">${(data.colors || []).join(', ')}</div>
+    </div>
+    <div class="data-item">
+      <div class="data-label">형태 / 질감</div>
+      <div class="data-value">${[...(data.shapes || []), ...(data.textures || [])].join(', ')}</div>
+    </div>
+  `;
+
+  // Coaching questions
+  const qEl = document.getElementById('coachingQuestions');
+  // 마크다운 볼드(**) 제거 후 파싱
+  const cleanText = state.coachingText.replace(/\*\*/g, '');
+  const lines = cleanText.split('\n').filter(l => l.trim() && /^\d+\./.test(l.trim()));
+  if (lines.length > 0) {
+    qEl.innerHTML = lines.map((line, i) => {
+      const qText = line.replace(/^\d+\.\s*/, '');
+      return `
+        <div class="coaching-question" style="animation-delay:${i * 0.15}s">
+          <span class="q-number">0${i+1}</span>
+          <span class="q-text">${qText}</span>
+        </div>
+      `;
+    }).join('');
+  } else {
+    // 번호 없이 줄바꿈으로 구분된 경우
+    const paras = cleanText.split('\n').filter(l => l.trim());
+    const qLines = paras.filter(l => l.includes('?'));
+    if (qLines.length > 0) {
+      qEl.innerHTML = qLines.map((line, i) => `
+        <div class="coaching-question" style="animation-delay:${i * 0.15}s">
+          <span class="q-number">0${i+1}</span>
+          <span class="q-text">${line.trim()}</span>
+        </div>
+      `).join('');
+    } else {
+      qEl.innerHTML = `<p style="font-family:'Gowun Batang',serif; color:var(--ash); line-height:1.8;">${cleanText}</p>`;
+    }
+  }
+
+  // Prompt card
+  // 프롬프트 카드 숨김 처리
+}
+
+function buildCanvasPlaceholder(data) {
+  const c = document.createElement('canvas');
+  c.width = 600; c.height = 600;
+  const cx = c.getContext('2d');
+  const colors = data.colors && data.colors.length > 0
+    ? data.colors.map(col => colorNameToHex(col))
+    : ['#c9a84c', '#d4623a', '#6b5b8a'];
+  const grad = cx.createRadialGradient(300, 300, 0, 300, 300, 400);
+  colors.forEach((col, i) => {
+    grad.addColorStop(i / (colors.length - 1 || 1), col || '#888');
+  });
+  cx.fillStyle = grad;
+  cx.fillRect(0, 0, 600, 600);
+  for (let i = 0; i < 18; i++) {
+    const x = Math.random() * 600, y = Math.random() * 600;
+    const r = 40 + Math.random() * 160;
+    const g2 = cx.createRadialGradient(x, y, 0, x, y, r);
+    const col = colors[i % colors.length] || '#fff';
+    g2.addColorStop(0, col + 'cc');
+    g2.addColorStop(1, 'transparent');
+    cx.globalCompositeOperation = i % 3 === 0 ? 'screen' : 'multiply';
+    cx.fillStyle = g2;
+    cx.beginPath();
+    cx.arc(x, y, r, 0, Math.PI * 2);
+    cx.fill();
+  }
+  cx.globalCompositeOperation = 'source-over';
+  return c.toDataURL();
+}
+
+function colorNameToHex(name) {
+  const map = {
+    '빨강': '#e05050', '파랑': '#4a7ab5', '노랑': '#e8c84a', '초록': '#4a9b70',
+    '보라': '#7b5ba8', '주황': '#e07840', '검정': '#222', '흰색': '#f0eeea',
+    '회색': '#888', '분홍': '#d4789a', '청록': '#4a8c8c', '갈색': '#8b6040',
+    'red': '#e05050', 'blue': '#4a7ab5', 'yellow': '#e8c84a', 'green': '#4a9b70',
+    'purple': '#7b5ba8', 'orange': '#e07840', 'black': '#222', 'white': '#f0eeea',
+    'gray': '#888', 'pink': '#d4789a', 'teal': '#4a8c8c', 'brown': '#8b6040',
+  };
+  if (!name) return '#888';
+  const lower = name.toLowerCase();
+  for (const [k, v] of Object.entries(map)) {
+    if (lower.includes(k)) return v;
+  }
+  return '#' + Math.floor(Math.random() * 0xaaaaaa + 0x333333).toString(16).padStart(6, '0');
+}
+
+function showSafetyAlert() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  div.innerHTML = `
+    <div class="msg-avatar ai"></div>
+    <div class="safety-alert">
+      <h3>🤍 잠깐, 괜찮아요?</h3>
+      <p>지금 많이 힘드신 것 같아요.<br>
+      신뢰할 수 있는 어른이나 선생님, 상담사에게 이야기해 주세요.<br><br>
+      <strong>청소년 상담전화: 1388</strong> (24시간)</p>
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  // 대화는 계속 이어짐 — sendBtn 비활성화 없음
+}
+
+function restart() {
+  state = { initialEmotion: '', messages: [], turnCount: 0, emotionData: null, imageUrl: '', coachingText: '', conversationDone: false, waitingForArtist: false };
+  document.getElementById('initialEmotionInput').value = '';
+  document.getElementById('chatArea').innerHTML = '';
+  document.getElementById('chatInput').value = '';
+  document.getElementById('sendBtn').disabled = false;
+  setStage(0);
+}
+</script>
+</body>
+</html>
