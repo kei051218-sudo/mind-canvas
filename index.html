@@ -941,17 +941,20 @@ async function startSession() {
 async function sendMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
-  if (!text || state.conversationDone) return;
+  if (!text) return;
 
-  // 화가 이름 입력 대기 중이면
+  // 화가 이름 입력 대기 중이면 (conversationDone 체크 전에 처리)
   if (state.waitingForArtist) {
     state.waitingForArtist = false;
     addMessage('user', text);
     document.getElementById('chatInput').value = '';
+    document.getElementById('chatInput').disabled = false;
     addMessage('ai', `${text}의 스타일로 그림을 그려볼게요 🎨`);
     setTimeout(() => generateImage(text), 800);
     return;
   }
+
+  if (state.conversationDone) return;
 
   input.value = '';
   input.style.height = 'auto';
