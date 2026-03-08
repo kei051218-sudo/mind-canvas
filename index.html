@@ -619,17 +619,298 @@
 
   .intensity-pip.lit { background: var(--gold); }
 
+  /* Gallery button in header */
+  .gallery-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 50px;
+    padding: 10px 18px;
+    color: var(--gold);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.2s;
+    backdrop-filter: blur(12px);
+  }
+  .gallery-btn:hover {
+    background: rgba(201,168,76,0.12);
+    border-color: rgba(201,168,76,0.5);
+  }
+  .gallery-count {
+    background: var(--gold);
+    color: var(--ink);
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  /* Gallery overlay */
+  .gallery-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(13,13,15,0.96);
+    backdrop-filter: blur(20px);
+    overflow-y: auto;
+    animation: fadeIn 0.3s ease;
+  }
+  .gallery-overlay.open { display: block; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+  .gallery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px 28px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: sticky;
+    top: 0;
+    background: rgba(13,13,15,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 10;
+  }
+  .gallery-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    background: linear-gradient(135deg, var(--gold), var(--cream));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gallery-close {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--ash);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .gallery-close:hover { color: var(--cream); border-color: rgba(255,255,255,0.3); }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 28px;
+  }
+
+  .gallery-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s;
+    animation: fadeUp 0.5s ease both;
+  }
+  .gallery-card:hover {
+    border-color: rgba(201,168,76,0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  }
+  .gallery-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    background: rgba(255,255,255,0.03);
+  }
+  .gallery-card-body {
+    padding: 16px 18px 18px;
+  }
+  .gallery-date {
+    font-size: 11px;
+    color: var(--ash);
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    font-family: 'DM Serif Display', serif;
+  }
+  .gallery-emotion-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .gallery-emotion-tag {
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-family: 'Gowun Batang', serif;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--gold);
+  }
+  .gallery-question {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ash);
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .gallery-empty {
+    text-align: center;
+    padding: 80px 28px;
+    color: var(--ash);
+    font-family: 'Gowun Batang', serif;
+    font-size: 16px;
+    line-height: 2;
+    grid-column: 1 / -1;
+  }
+  .gallery-clear-btn {
+    display: block;
+    margin: 0 28px 28px;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid rgba(212,98,58,0.2);
+    color: rgba(212,98,58,0.6);
+    border-radius: 12px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .gallery-clear-btn:hover {
+    border-color: rgba(212,98,58,0.5);
+    color: var(--ember);
+  }
+
+  /* Detail modal */
+  .detail-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(13,13,15,0.98);
+    overflow-y: auto;
+    animation: fadeIn 0.25s ease;
+  }
+  .detail-modal.open { display: block; }
+  .detail-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 24px 80px;
+  }
+  .detail-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ash);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .detail-back:hover { color: var(--cream); }
+  .detail-img {
+    width: 100%;
+    border-radius: 18px;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .detail-summary {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 14px;
+    color: var(--ash);
+    line-height: 1.8;
+  }
+  .detail-summary strong {
+    color: var(--gold);
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+  }
+
+  /* Save toast */
+  .save-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(74,140,122,0.9);
+    color: white;
+    font-family: 'Gowun Batang', serif;
+    font-size: 14px;
+    padding: 12px 24px;
+    border-radius: 50px;
+    opacity: 0;
+    transition: all 0.4s;
+    pointer-events: none;
+    z-index: 500;
+    white-space: nowrap;
+  }
+  .save-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
   /* Responsive */
   @media (max-width: 520px) {
     .card { padding: 20px; }
     .data-grid { grid-template-columns: 1fr; }
     .msg-bubble { max-width: 88%; }
+    .gallery-grid { grid-template-columns: 1fr; padding: 16px; }
+    .gallery-btn { top: 12px; right: 12px; padding: 8px 14px; }
   }
 </style>
 </head>
 <body>
 
 <canvas id="bgCanvas"></canvas>
+
+<!-- 갤러리 버튼 (고정) -->
+<button class="gallery-btn" onclick="openGallery()">
+  🖼 나의 캔버스 <span class="gallery-count" id="galleryCount">0</span>
+</button>
+
+<!-- 갤러리 오버레이 -->
+<div class="gallery-overlay" id="galleryOverlay">
+  <div class="gallery-header">
+    <span class="gallery-title">나의 감정 캔버스</span>
+    <button class="gallery-close" onclick="closeGallery()">✕</button>
+  </div>
+  <div class="gallery-grid" id="galleryGrid"></div>
+  <button class="gallery-clear-btn" onclick="clearGallery()">모든 기록 삭제</button>
+</div>
+
+<!-- 상세 모달 -->
+<div class="detail-modal" id="detailModal">
+  <div class="detail-inner">
+    <button class="detail-back" onclick="closeDetail()">← 갤러리로 돌아가기</button>
+    <img class="detail-img" id="detailImg" src="" alt="">
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- 저장 토스트 -->
+<div class="save-toast" id="saveToast">✦ 갤러리에 저장되었어요</div>
 
 <div class="app">
   <header class="header">
@@ -741,7 +1022,10 @@
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:14px; font-family:monospace; font-size:12px; color:var(--ash); word-break:break-all; line-height:1.7;" id="promptDisplay"></div>
     </div>
 
-    <div class="restart-row">
+    <div class="restart-row" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="saveBtn" onclick="saveToGallery()">
+        🖼 &nbsp; 갤러리에 저장
+      </button>
       <button class="btn btn-ghost" onclick="restart()">↺ &nbsp; 새 세션 시작</button>
     </div>
   </div>
@@ -1309,8 +1593,195 @@ function restart() {
   document.getElementById('chatArea').innerHTML = '';
   document.getElementById('chatInput').value = '';
   document.getElementById('sendBtn').disabled = false;
+  // 저장 버튼 복원
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '🖼 &nbsp; 갤러리에 저장'; }
   setStage(0);
 }
+
+// ===== Gallery =====
+const GALLERY_KEY = 'mindcanvas_gallery';
+
+function loadGallery() {
+  try { return JSON.parse(localStorage.getItem(GALLERY_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function saveGallery(items) {
+  localStorage.setItem(GALLERY_KEY, JSON.stringify(items));
+  updateGalleryCount();
+}
+
+function updateGalleryCount() {
+  const items = loadGallery();
+  const el = document.getElementById('galleryCount');
+  if (el) el.textContent = items.length;
+}
+
+// 세션 완료 시 자동 저장
+function saveToGallery() {
+  const data = state.emotionData;
+  if (!data) return;
+
+  const img = document.getElementById('artworkImg');
+  const imageUrl = img ? img.src : '';
+
+  // 코칭 질문 추출
+  const cleanText = state.coachingText.replace(/\*\*/g, '');
+  const lines = cleanText.split('\n').filter(l => l.trim() && /^\d+\./.test(l.trim()));
+  const questions = lines.map(l => l.replace(/^\d+\.\s*/, '').trim());
+
+  // 대화 요약 (첫 사용자 입력 + 마지막 2턴)
+  const userMsgs = state.messages.filter(m => m.role === 'user').map(m => m.content);
+  const summaryLines = userMsgs.slice(0, 1).concat(userMsgs.slice(-2));
+  const summary = [...new Set(summaryLines)].join(' / ');
+
+  const entry = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }),
+    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+    imageUrl,
+    emotions: data.emotion_words_ko || [],
+    intensity: data.intensity_1_to_5 || 3,
+    colors: data.colors || [],
+    shapes: data.shapes || [],
+    space: data.space_scene || '',
+    artStyle: data.art_style || '',
+    questions,
+    summary,
+    promptKo: data.prompt_ko || ''
+  };
+
+  const items = loadGallery();
+  items.unshift(entry); // 최신 순
+  saveGallery(items);
+
+  // 버튼 상태 변경
+  const btn = document.getElementById('saveBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '✓ &nbsp; 저장됨';
+    btn.style.background = 'rgba(74,140,122,0.3)';
+    btn.style.color = 'var(--jade)';
+    btn.style.border = '1px solid rgba(74,140,122,0.4)';
+  }
+
+  showToast();
+}
+
+function showToast() {
+  const t = document.getElementById('saveToast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function openGallery() {
+  renderGalleryGrid();
+  document.getElementById('galleryOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGallery() {
+  document.getElementById('galleryOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderGalleryGrid() {
+  const items = loadGallery();
+  const grid = document.getElementById('galleryGrid');
+
+  if (items.length === 0) {
+    grid.innerHTML = `
+      <div class="gallery-empty">
+        아직 저장된 캔버스가 없어요<br>
+        <span style="font-size:13px; opacity:0.5;">대화를 마치고 갤러리에 저장해보세요</span>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map((item, idx) => `
+    <div class="gallery-card" onclick="openDetail(${idx})" style="animation-delay:${idx * 0.06}s">
+      <img class="gallery-thumb" src="${item.imageUrl}" alt="감정 이미지"
+        onerror="this.style.background='rgba(201,168,76,0.08)'; this.style.minHeight='200px'">
+      <div class="gallery-card-body">
+        <div class="gallery-date">${item.date} · ${item.time}</div>
+        <div class="gallery-emotion-tags">
+          ${(item.emotions || []).map(e => `<span class="gallery-emotion-tag">${e}</span>`).join('')}
+        </div>
+        ${item.questions && item.questions[0]
+          ? `<div class="gallery-question">Q. ${item.questions[0]}</div>`
+          : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function openDetail(idx) {
+  const items = loadGallery();
+  const item = items[idx];
+  if (!item) return;
+
+  document.getElementById('detailImg').src = item.imageUrl;
+
+  const pips = Array.from({length: 5}, (_, i) =>
+    `<div class="intensity-pip ${i < item.intensity ? 'lit' : ''}"></div>`
+  ).join('');
+
+  const qHtml = (item.questions || []).map((q, i) => `
+    <div class="coaching-question" style="animation-delay:${i * 0.1}s">
+      <span class="q-number">0${i+1}</span>
+      <span class="q-text">${q}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="detail-summary">
+      <strong>DATE</strong>
+      ${item.date} ${item.time}
+    </div>
+    <div class="detail-summary">
+      <strong>감정</strong>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">
+        ${(item.emotions || []).map(e => `<span class="gallery-emotion-tag">${e}</span>`).join('')}
+      </div>
+    </div>
+    <div class="detail-summary">
+      <strong>감정 강도</strong>
+      <div class="intensity-bar" style="margin-top:6px;">${pips}</div>
+      <div style="font-size:13px; margin-top:4px; color:var(--cream);">${item.intensity} / 5</div>
+    </div>
+    ${item.summary ? `
+    <div class="detail-summary">
+      <strong>대화 요약</strong>
+      ${item.summary}
+    </div>` : ''}
+    ${item.promptKo ? `
+    <div class="detail-summary">
+      <strong>감정 해석</strong>
+      ${item.promptKo}
+    </div>` : ''}
+    <div class="card card-gold" style="margin-top:16px;">
+      <p class="section-label">아트 코칭 질문</p>
+      ${qHtml || '<p style="color:var(--ash); font-family:\'Gowun Batang\',serif;">기록된 질문이 없어요</p>'}
+    </div>
+  `;
+
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('open');
+}
+
+function clearGallery() {
+  if (!confirm('모든 갤러리 기록을 삭제할까요? 되돌릴 수 없어요.')) return;
+  localStorage.removeItem(GALLERY_KEY);
+  updateGalleryCount();
+  renderGalleryGrid();
+}
+
+// 초기 카운트 업데이트
+updateGalleryCount();
 </script>
 </body>
 </html>
