@@ -871,6 +871,119 @@
     transform: translateX(-50%) translateY(0);
   }
 
+  /* Consent screen */
+  .consent-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    background: rgba(13,13,15,0.97);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.4s ease;
+  }
+  .consent-screen.hidden { display: none; }
+  .consent-box {
+    max-width: 480px;
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 24px;
+    padding: 36px 32px;
+  }
+  .consent-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    background: linear-gradient(135deg, var(--gold), var(--cream));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .consent-subtitle {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ash);
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+  .consent-items {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+  }
+  .consent-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ash);
+    line-height: 1.7;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .consent-item:last-child { border-bottom: none; }
+  .consent-item-icon { color: var(--gold); flex-shrink: 0; margin-top: 2px; }
+  .consent-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .consent-agree {
+    background: linear-gradient(135deg, var(--gold), #e8c56a);
+    color: var(--ink);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 50px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.03em;
+  }
+  .consent-agree:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.3); }
+  .consent-decline {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--ash);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 14px;
+    border-radius: 50px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .consent-decline:hover { border-color: rgba(255,255,255,0.3); color: var(--cream); }
+  .consent-note {
+    font-family: 'Gowun Batang', serif;
+    font-size: 11px;
+    color: rgba(155,154,163,0.5);
+    text-align: center;
+    margin-top: 14px;
+    line-height: 1.7;
+  }
+
+  /* DB 저장 표시 */
+  .db-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--jade);
+    font-family: 'Gowun Batang', serif;
+    background: rgba(74,140,122,0.08);
+    border: 1px solid rgba(74,140,122,0.2);
+    border-radius: 50px;
+    padding: 4px 10px;
+    margin-bottom: 16px;
+  }
+
   /* Responsive */
   @media (max-width: 520px) {
     .card { padding: 20px; }
@@ -878,12 +991,54 @@
     .msg-bubble { max-width: 88%; }
     .gallery-grid { grid-template-columns: 1fr; padding: 16px; }
     .gallery-btn { top: 12px; right: 12px; padding: 8px 14px; }
+    .consent-box { padding: 28px 20px; }
   }
 </style>
 </head>
 <body>
 
 <canvas id="bgCanvas"></canvas>
+
+<!-- 동의 화면 -->
+<div class="consent-screen" id="consentScreen">
+  <div class="consent-box">
+    <div style="text-align:center; margin-bottom:20px;">
+      <div class="logo-mark" style="margin:0 auto 12px;"></div>
+      <div class="consent-title">Mind Canvas</div>
+      <div class="consent-subtitle">시작하기 전에 잠깐 — 데이터 수집에 대해 안내드려요</div>
+    </div>
+    <div class="consent-items">
+      <div class="consent-item">
+        <span class="consent-item-icon">✦</span>
+        <span>감정 키워드, 색채, 형태 등 <strong style="color:var(--cream);">감정 분석 데이터</strong>가 수집돼요</span>
+      </div>
+      <div class="consent-item">
+        <span class="consent-item-icon">✦</span>
+        <span>생성된 <strong style="color:var(--cream);">이미지 및 코칭 질문</strong>이 저장돼요</span>
+      </div>
+      <div class="consent-item">
+        <span class="consent-item-icon">✦</span>
+        <span>이름, 연락처 등 <strong style="color:var(--cream);">개인 식별 정보는 수집하지 않아요</strong></span>
+      </div>
+      <div class="consent-item">
+        <span class="consent-item-icon">✦</span>
+        <span>수집된 데이터는 <strong style="color:var(--cream);">서비스 개선 및 연구 목적</strong>으로만 활용돼요</span>
+      </div>
+    </div>
+    <div class="consent-btns">
+      <button class="consent-agree" onclick="handleConsent(true)">
+        동의하고 시작하기
+      </button>
+      <button class="consent-decline" onclick="handleConsent(false)">
+        동의 없이 이용하기
+      </button>
+    </div>
+    <div class="consent-note">
+      동의하지 않아도 모든 기능을 이용할 수 있어요<br>
+      단, 데이터는 내 기기에만 저장돼요
+    </div>
+  </div>
+</div>
 
 <!-- 갤러리 버튼 (고정) -->
 <button class="gallery-btn" onclick="openGallery()">
@@ -926,6 +1081,9 @@
   <!-- Stage 0: 감정 입력 -->
   <div class="stage active" id="stage0">
     <div class="card card-gold">
+      <div class="db-badge" id="dbBadge" style="display:none;">
+        ✦ &nbsp; 감정 데이터가 기록돼요
+      </div>
       <p class="section-label">첫 번째 감정</p>
       <p class="emotion-prompt">
         지금 이 순간, 마음속에 어떤 감정이 자리하고 있나요?<br>
@@ -1085,8 +1243,33 @@ let state = {
   imageUrl: '',
   coachingText: '',
   conversationDone: false,
-  waitingForArtist: false
+  waitingForArtist: false,
+  consentGiven: false
 };
+
+// ===== Consent =====
+function handleConsent(agreed) {
+  state.consentGiven = agreed;
+  document.getElementById('consentScreen').classList.add('hidden');
+  if (agreed) {
+    document.getElementById('dbBadge').style.display = 'inline-flex';
+  }
+}
+
+// ===== Supabase Save =====
+async function saveToSupabase(entry) {
+  try {
+    const response = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    });
+    const result = await response.json();
+    if (!result.success) console.error('Supabase 저장 실패:', result.error);
+  } catch(e) {
+    console.error('Supabase 저장 오류:', e);
+  }
+}
 
 const SYSTEM_PROMPT = `당신은 마인드 캔버스(Mind Canvas) 앱에서 활동하는 문화예술교육용 AI 에이전트입니다.
 주요 대상은 아동·청소년 및 학생이며, 목표는 사용자의 감정을 예술적으로 표현하고 심층적인 자기 성찰을 돕는 것입니다.
@@ -1588,7 +1771,7 @@ function showSafetyAlert() {
 }
 
 function restart() {
-  state = { initialEmotion: '', messages: [], turnCount: 0, emotionData: null, imageUrl: '', coachingText: '', conversationDone: false, waitingForArtist: false };
+  state = { initialEmotion: '', messages: [], turnCount: 0, emotionData: null, imageUrl: '', coachingText: '', conversationDone: false, waitingForArtist: false, consentGiven: state.consentGiven };
   document.getElementById('initialEmotionInput').value = '';
   document.getElementById('chatArea').innerHTML = '';
   document.getElementById('chatInput').value = '';
@@ -1655,6 +1838,22 @@ function saveToGallery() {
   const items = loadGallery();
   items.unshift(entry); // 최신 순
   saveGallery(items);
+
+  // 동의한 경우 Supabase에도 저장
+  if (state.consentGiven) {
+    saveToSupabase({
+      emotions: entry.emotions,
+      intensity: entry.intensity,
+      colors: entry.colors,
+      shapes: entry.shapes,
+      space_scene: entry.space,
+      art_style: entry.artStyle,
+      prompt_ko: entry.promptKo,
+      coaching_questions: entry.questions,
+      conversation_summary: entry.summary,
+      image_url: entry.imageUrl
+    });
+  }
 
   // 버튼 상태 변경
   const btn = document.getElementById('saveBtn');
