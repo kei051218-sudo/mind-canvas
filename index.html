@@ -984,8 +984,99 @@
     margin-bottom: 16px;
   }
 
-  /* Responsive */
-  @media (max-width: 520px) {
+  /* Online exhibit modal */
+  .exhibit-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 350;
+    background: rgba(13,13,15,0.92);
+    backdrop-filter: blur(16px);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.3s ease;
+  }
+  .exhibit-modal.open { display: flex; }
+  .exhibit-box {
+    max-width: 440px;
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 24px;
+    padding: 32px 28px;
+  }
+  .exhibit-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    object-fit: cover;
+    margin-bottom: 20px;
+    display: block;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .exhibit-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    font-family: 'DM Serif Display', serif;
+    margin-bottom: 10px;
+  }
+  .exhibit-title-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 12px;
+    color: var(--cream);
+    font-family: 'Gowun Batang', serif;
+    font-size: 16px;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.3s;
+    margin-bottom: 8px;
+  }
+  .exhibit-title-input:focus {
+    border-color: rgba(201,168,76,0.7);
+  }
+  .exhibit-title-input::placeholder { color: var(--ash); opacity: 0.6; }
+  .exhibit-hint {
+    font-family: 'Gowun Batang', serif;
+    font-size: 12px;
+    color: var(--ash);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .exhibit-btns {
+    display: flex;
+    gap: 10px;
+  }
+  .exhibit-submit {
+    flex: 1;
+    background: linear-gradient(135deg, var(--gold), #e8c56a);
+    color: var(--ink);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 50px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .exhibit-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,168,76,0.3); }
+  .exhibit-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .exhibit-cancel {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--ash);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 14px;
+    border-radius: 50px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .exhibit-cancel:hover { border-color: rgba(255,255,255,0.3); color: var(--cream); }
     .card { padding: 20px; }
     .data-grid { grid-template-columns: 1fr; }
     .msg-bubble { max-width: 88%; }
@@ -1064,7 +1155,25 @@
   </div>
 </div>
 
-<!-- 저장 토스트 -->
+<!-- 온라인 전시 모달 -->
+<div class="exhibit-modal" id="exhibitModal">
+  <div class="exhibit-box">
+    <p class="exhibit-label">🌐 온라인 갤러리 전시</p>
+    <img class="exhibit-preview" id="exhibitPreview" src="" alt="">
+    <p class="exhibit-label">작품 제목을 지어주세요</p>
+    <input class="exhibit-title-input" id="exhibitTitleInput"
+      type="text" maxlength="40"
+      placeholder="예) 안개 속에서도 걷는다">
+    <p class="exhibit-hint">
+      제목과 그림만 공개돼요. 대화 내용은 절대 공개되지 않아요.<br>
+      익명으로 Mind Canvas 온라인 갤러리에 전시됩니다.
+    </p>
+    <div class="exhibit-btns">
+      <button class="exhibit-cancel" onclick="closeExhibitModal()">취소</button>
+      <button class="exhibit-submit" id="exhibitSubmitBtn" onclick="submitExhibit()">전시하기</button>
+    </div>
+  </div>
+</div>
 <div class="save-toast" id="saveToast">✦ 갤러리에 저장되었어요</div>
 
 <div class="app">
@@ -1183,6 +1292,10 @@
     <div class="restart-row" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
       <button class="btn btn-primary" id="saveBtn" onclick="saveToGallery()">
         🖼 &nbsp; 갤러리에 저장
+      </button>
+      <button class="btn btn-primary" id="exhibitBtn" onclick="openExhibitModal()"
+        style="background: linear-gradient(135deg, var(--violet), #8b6bb5);">
+        🌐 &nbsp; 온라인 전시하기
       </button>
       <button class="btn btn-ghost" onclick="restart()">↺ &nbsp; 새 세션 시작</button>
     </div>
@@ -1872,6 +1985,94 @@ function showToast() {
   const t = document.getElementById('saveToast');
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== Online Exhibit =====
+function openExhibitModal() {
+  const img = document.getElementById('artworkImg');
+  document.getElementById('exhibitPreview').src = img ? img.src : '';
+  document.getElementById('exhibitTitleInput').value = '';
+  document.getElementById('exhibitSubmitBtn').disabled = false;
+  document.getElementById('exhibitSubmitBtn').textContent = '전시하기';
+  document.getElementById('exhibitModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('exhibitTitleInput').focus(), 200);
+}
+
+function closeExhibitModal() {
+  document.getElementById('exhibitModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitExhibit() {
+  const title = document.getElementById('exhibitTitleInput').value.trim();
+  if (!title) {
+    document.getElementById('exhibitTitleInput').focus();
+    return;
+  }
+
+  const btn = document.getElementById('exhibitSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = '전시 중...';
+
+  const data = state.emotionData;
+  const img = document.getElementById('artworkImg');
+  const imageUrl = img ? img.src : '';
+
+  const cleanText = state.coachingText.replace(/\*\*/g, '');
+  const lines = cleanText.split('\n').filter(l => l.trim() && /^\d+\./.test(l.trim()));
+  const questions = lines.map(l => l.replace(/^\d+\.\s*/, '').trim());
+  const userMsgs = state.messages.filter(m => m.role === 'user').map(m => m.content);
+  const summaryLines = userMsgs.slice(0, 1).concat(userMsgs.slice(-2));
+  const summary = [...new Set(summaryLines)].join(' / ');
+
+  try {
+    const response = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        emotions: data.emotion_words_ko || [],
+        intensity: data.intensity_1_to_5 || 3,
+        colors: data.colors || [],
+        shapes: data.shapes || [],
+        space_scene: data.space_scene || '',
+        art_style: data.art_style || '',
+        prompt_ko: data.prompt_ko || '',
+        coaching_questions: questions,
+        conversation_summary: summary,
+        image_url: imageUrl,
+        title: title,
+        is_public: true
+      })
+    });
+    const result = await response.json();
+    if (result.success) {
+      closeExhibitModal();
+      // 전시 완료 토스트
+      const t = document.getElementById('saveToast');
+      t.textContent = '🌐 온라인 갤러리에 전시되었어요';
+      t.classList.add('show');
+      setTimeout(() => {
+        t.classList.remove('show');
+        t.textContent = '✦ 갤러리에 저장되었어요';
+      }, 3000);
+      // 전시 버튼 완료 상태
+      const exhibitBtn = document.getElementById('exhibitBtn');
+      if (exhibitBtn) {
+        exhibitBtn.disabled = true;
+        exhibitBtn.innerHTML = '✓ &nbsp; 전시됨';
+        exhibitBtn.style.background = 'rgba(107,91,138,0.3)';
+        exhibitBtn.style.color = 'var(--violet)';
+        exhibitBtn.style.border = '1px solid rgba(107,91,138,0.4)';
+      }
+    } else {
+      throw new Error(result.error);
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '다시 시도';
+    console.error('전시 실패:', e);
+  }
 }
 
 function openGallery() {
