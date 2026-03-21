@@ -31,7 +31,9 @@ export default async function handler(req, res) {
         prompt_ko: body.prompt_ko || '',
         coaching_questions: body.coaching_questions || [],
         conversation_summary: body.conversation_summary || '',
-        image_url: body.image_url || ''
+        image_url: body.image_url || '',
+        title: body.title || null,
+        is_public: body.is_public || false
       })
     });
 
