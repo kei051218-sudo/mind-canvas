@@ -2054,6 +2054,32 @@ async function submitExhibit() {
     const result = await response.json();
     if (result.success) {
       closeExhibitModal();
+
+      // 로컬 갤러리에도 저장
+      const entry = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }),
+        time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+        imageUrl, emotions: data.emotion_words_ko || [],
+        intensity: data.intensity_1_to_5 || 3,
+        colors: data.colors || [], shapes: data.shapes || [],
+        space: data.space_scene || '', artStyle: data.art_style || '',
+        questions, summary, promptKo: data.prompt_ko || '', title
+      };
+      const localItems = loadGallery();
+      localItems.unshift(entry);
+      saveGallery(localItems);
+
+      // 갤러리 저장 버튼도 완료 상태
+      const saveBtn = document.getElementById('saveBtn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '✓ &nbsp; 저장됨';
+        saveBtn.style.background = 'rgba(74,140,122,0.3)';
+        saveBtn.style.color = 'var(--jade)';
+        saveBtn.style.border = '1px solid rgba(74,140,122,0.4)';
+      }
+
       // 전시 완료 토스트
       const t = document.getElementById('saveToast');
       t.textContent = '🌐 온라인 갤러리에 전시되었어요';
