@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   try {
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
-    const MODEL_ID = 'gemini-3.1-flash-image-preview';
+    const MODEL_ID = 'gemini-2.5-flash-image';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${GEMINI_KEY}`;
 
     const response = await fetch(url, {
