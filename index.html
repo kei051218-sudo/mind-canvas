@@ -1274,6 +1274,11 @@
         <img id="artworkImg" src="" alt="감정 추상 이미지" referrerpolicy="no-referrer">
         <div class="artwork-overlay" id="artworkStyle"></div>
       </div>
+      <div style="text-align:center; margin-top:16px;">
+        <button id="retryImageBtn" class="btn btn-ghost" onclick="retryImageGeneration()" style="display:none;">
+          🔄 &nbsp; 이미지 다시 생성하기
+        </button>
+      </div>
     </div>
 
     <!-- 감정 데이터 -->
@@ -1366,7 +1371,8 @@ let state = {
   coachingText: '',
   conversationDone: false,
   waitingForArtist: false,
-  consentGiven: false
+  consentGiven: false,
+  artistName: null
 };
 
 // ===== Consent =====
@@ -1669,6 +1675,7 @@ function selectArtist(choice) {
 
 async function generateImage(artistName) {
   setStage(2);
+  state.artistName = artistName;
   const data = state.emotionData;
   await generateCoaching();
   try {
@@ -1690,6 +1697,39 @@ async function generateImage(artistName) {
     throw new Error(result.error || "이미지 생성에 실패했습니다.");
   } catch(e) {
     console.error('이미지 생성 실패:', e);
+    showResults(null);
+  }
+}
+
+// ===== Image Retry =====
+async function retryImageGeneration() {
+  const data = state.emotionData;
+  if (!data) return;
+
+  // 버튼 숨기고 로딩 상태로 전환
+  const retryBtn = document.getElementById('retryImageBtn');
+  if (retryBtn) retryBtn.style.display = 'none';
+  setStage(2);
+
+  try {
+    const basePrompt = (data.prompt_en || '').split('::')[0].trim();
+    const finalPrompt = state.artistName
+      ? `Style of ${state.artistName}, highly abstract fine art painting. No text, no people. ${basePrompt}`
+      : basePrompt;
+
+    const response = await fetch('/api/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: finalPrompt })
+    });
+    const result = await response.json();
+    if (result.imageUrl) {
+      showResults(result.imageUrl);
+      return;
+    }
+    throw new Error(result.error || "이미지 생성에 실패했습니다.");
+  } catch(e) {
+    console.error('이미지 재생성 실패:', e);
     showResults(null);
   }
 }
@@ -1732,6 +1772,10 @@ function showResults(imageUrl) {
   // Image
   const img = document.getElementById('artworkImg');
   const frame = document.querySelector('.artwork-frame');
+  const retryBtn = document.getElementById('retryImageBtn');
+
+  // 재시도 버튼 초기 숨김
+  if (retryBtn) retryBtn.style.display = 'none';
 
   // 로딩 중 표시
   img.style.opacity = '0';
@@ -1745,6 +1789,7 @@ function showResults(imageUrl) {
     img.onerror = () => {
       img.src = buildCanvasPlaceholder(data);
       img.style.opacity = '1';
+      if (retryBtn) retryBtn.style.display = 'inline-flex';
     };
     img.src = url;
   };
@@ -1754,6 +1799,7 @@ function showResults(imageUrl) {
   } else {
     img.src = buildCanvasPlaceholder(data);
     img.style.opacity = '1';
+    if (retryBtn) retryBtn.style.display = 'inline-flex';
   }
 
   // Artist style overlay
@@ -1893,7 +1939,7 @@ function showSafetyAlert() {
 }
 
 function restart() {
-  state = { initialEmotion: '', messages: [], turnCount: 0, emotionData: null, imageUrl: '', coachingText: '', conversationDone: false, waitingForArtist: false, consentGiven: state.consentGiven };
+  state = { initialEmotion: '', messages: [], turnCount: 0, emotionData: null, imageUrl: '', coachingText: '', conversationDone: false, waitingForArtist: false, consentGiven: state.consentGiven, artistName: null };
   document.getElementById('initialEmotionInput').value = '';
   document.getElementById('chatArea').innerHTML = '';
   document.getElementById('chatInput').value = '';
