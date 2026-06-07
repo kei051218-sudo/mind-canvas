@@ -1953,6 +1953,58 @@ function restart() {
 // ===== Gallery =====
 const GALLERY_KEY = 'mindcanvas_gallery';
 
+// ===== IndexedDB: 원본 고화질 이미지 저장 =====
+// localStorage(약 5MB)에는 작은 썸네일만 두고, 원본은 용량이 넉넉한
+// IndexedDB에 항목 id를 키로 저장한다. 상세 보기에서 원본을 불러온다.
+const IDB_NAME = 'mindcanvas';
+const IDB_STORE = 'images';
+let _idbPromise = null;
+function idbOpen() {
+  if (_idbPromise) return _idbPromise;
+  _idbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('IndexedDB 미지원')); return; }
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return _idbPromise;
+}
+async function idbPutImage(id, dataUrl) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(dataUrl, String(id));
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbGetImage(id) {
+  try {
+    const db = await idbOpen();
+    return await new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const r = tx.objectStore(IDB_STORE).get(String(id));
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => resolve(null);
+    });
+  } catch(e) { return null; }
+}
+async function idbClearImages() {
+  try {
+    const db = await idbOpen();
+    return await new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).clear();
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    });
+  } catch(e) { return false; }
+}
+
 function loadGallery() {
   try { return JSON.parse(localStorage.getItem(GALLERY_KEY)) || []; }
   catch(e) { return []; }
@@ -2048,6 +2100,9 @@ async function saveToGallery() {
     summary,
     promptKo: data.prompt_ko || ''
   };
+
+  // 원본 고화질 이미지는 IndexedDB에 저장 (상세 보기에서 사용)
+  await idbPutImage(entry.id, fullImageUrl).catch(e => console.warn('원본 이미지 저장 실패:', e));
 
   const items = loadGallery();
   items.unshift(entry); // 최신 순
@@ -2173,6 +2228,8 @@ async function submitExhibit() {
         space: data.space_scene || '', artStyle: data.art_style || '',
         questions, summary, promptKo: data.prompt_ko || '', title
       };
+      // 원본 고화질 이미지는 IndexedDB에 저장
+      await idbPutImage(entry.id, imageUrl).catch(e => console.warn('원본 이미지 저장 실패:', e));
       const localItems = loadGallery();
       localItems.unshift(entry);
       saveGallery(localItems);
@@ -2255,12 +2312,15 @@ function renderGalleryGrid() {
   `).join('');
 }
 
-function openDetail(idx) {
+async function openDetail(idx) {
   const items = loadGallery();
   const item = items[idx];
   if (!item) return;
 
-  document.getElementById('detailImg').src = item.imageUrl;
+  // 썸네일을 먼저 표시한 뒤, IndexedDB의 원본 고화질로 교체
+  const detailImg = document.getElementById('detailImg');
+  detailImg.src = item.imageUrl || '';
+  idbGetImage(item.id).then(full => { if (full) detailImg.src = full; });
 
   const pips = Array.from({length: 5}, (_, i) =>
     `<div class="intensity-pip ${i < item.intensity ? 'lit' : ''}"></div>`
@@ -2312,9 +2372,10 @@ function closeDetail() {
   document.getElementById('detailModal').classList.remove('open');
 }
 
-function clearGallery() {
+async function clearGallery() {
   if (!confirm('모든 갤러리 기록을 삭제할까요? 되돌릴 수 없어요.')) return;
   localStorage.removeItem(GALLERY_KEY);
+  await idbClearImages();
   updateGalleryCount();
   renderGalleryGrid();
 }
