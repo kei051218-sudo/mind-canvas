@@ -1160,6 +1160,9 @@
   <div class="detail-inner">
     <button class="detail-back" onclick="closeDetail()">← 갤러리로 돌아가기</button>
     <img class="detail-img" id="detailImg" src="" alt="">
+    <div style="text-align:center; margin-bottom:20px;">
+      <button class="btn btn-ghost" onclick="downloadDetailImage()">⬇ &nbsp; 원본 이미지 다운로드</button>
+    </div>
     <div id="detailContent"></div>
   </div>
 </div>
@@ -1311,6 +1314,7 @@
         style="background: linear-gradient(135deg, var(--violet), #8b6bb5);">
         🌐 &nbsp; 온라인 전시하기
       </button>
+      <button class="btn btn-ghost" onclick="downloadArtwork()">⬇ &nbsp; 원본 다운로드</button>
       <button class="btn btn-ghost" onclick="restart()">↺ &nbsp; 새 세션 시작</button>
     </div>
   </div>
@@ -2316,6 +2320,7 @@ async function openDetail(idx) {
   const items = loadGallery();
   const item = items[idx];
   if (!item) return;
+  currentDetailItem = item; // 다운로드 버튼이 참조
 
   // 썸네일을 먼저 표시한 뒤, IndexedDB의 원본 고화질로 교체
   const detailImg = document.getElementById('detailImg');
@@ -2370,6 +2375,50 @@ async function openDetail(idx) {
 
 function closeDetail() {
   document.getElementById('detailModal').classList.remove('open');
+}
+
+// ===== 원본 이미지 다운로드 =====
+let currentDetailItem = null;
+
+function extFromDataUrl(u) {
+  const m = (u || '').match(/^data:image\/([a-zA-Z0-9]+)/);
+  if (!m) return 'jpg';
+  const t = m[1].toLowerCase();
+  return t === 'jpeg' ? 'jpg' : t;
+}
+function buildDownloadName(base, dataUrl) {
+  const safe = (base || 'artwork').toString()
+    .replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').slice(0, 40);
+  return `mindcanvas_${safe}.${extFromDataUrl(dataUrl)}`;
+}
+function downloadDataUrl(dataUrl, filename) {
+  if (!dataUrl) return;
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+// 결과 화면: 방금 생성한 원본 이미지 다운로드
+function downloadArtwork() {
+  const img = document.getElementById('artworkImg');
+  const url = img ? img.src : '';
+  if (!url) return;
+  const d = state.emotionData || {};
+  const base = (d.emotion_words_ko && d.emotion_words_ko[0]) || 'artwork';
+  downloadDataUrl(url, buildDownloadName(base, url));
+}
+// 갤러리 상세: IndexedDB의 원본 고화질 다운로드 (없으면 썸네일로 폴백)
+async function downloadDetailImage() {
+  if (!currentDetailItem) return;
+  const full = await idbGetImage(currentDetailItem.id);
+  const url = full || document.getElementById('detailImg').src || currentDetailItem.imageUrl || '';
+  if (!url) return;
+  const base = currentDetailItem.title
+    || (currentDetailItem.emotions && currentDetailItem.emotions[0])
+    || currentDetailItem.date || 'artwork';
+  downloadDataUrl(url, buildDownloadName(base, url));
 }
 
 async function clearGallery() {
