@@ -14,3 +14,6 @@ build/
 # OS / 에디터
 .DS_Store
 Thumbs.db
+
+# 전시 추출 결과물 (스크립트 산출물)
+exhibition-export/
